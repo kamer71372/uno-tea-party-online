@@ -1,0 +1,51 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNO Tea Party - 主持人控制台</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <main class="login-container">
+    <h1>🌈 UNO Tea Party</h1>
+    <h2>主持人控制台</h2>
+
+    <p id="hostStatus">正在確認登入狀態...</p>
+
+    <section id="roomSection" hidden>
+      <h3>建立遊戲房間</h3>
+
+      <label for="roomName">房間名稱</label>
+      <input
+        type="text"
+        id="roomName"
+        value="UNO Tea Party 2026"
+        maxlength="40"
+        required
+      >
+
+      <button type="button" id="createRoomButton">
+        建立新房間
+      </button>
+
+      <p id="message" role="status"></p>
+
+      <section id="roomResult" hidden>
+        <h3>房間建立成功！</h3>
+        <p>房間代碼：</p>
+        <h1 id="roomCode"></h1>
+        <p id="roomInfo"></p>
+      </section>
+    </section>
+
+    <button type="button" id="logoutButton">
+      登出
+    </button>
+  </main>
+
+  <script type="module" src="./js/host.js"></script>
+</body>
+</html>

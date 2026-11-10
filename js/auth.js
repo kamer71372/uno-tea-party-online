@@ -34,6 +34,10 @@ loginForm.addEventListener('submit', async (event) => {
 
     console.log('主持人登入成功');
     console.log('User ID:', data.user.id);
+    // 登入成功後，前往主持人控制台
+    setTimeout(() => {
+    window.location.href = './host.html';
+    }, 800);
 
   } catch (error) {
     console.error('登入失敗:', error.message);
