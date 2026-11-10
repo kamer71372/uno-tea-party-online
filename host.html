@@ -33,12 +33,28 @@
 
       <p id="message" role="status"></p>
 
-      <section id="roomResult" hidden>
-        <h3>房間建立成功！</h3>
+
+    <section id="roomResult" hidden>
+        <h3>房間建立成功！🎉</h3>
+
         <p>房間代碼：</p>
         <h1 id="roomCode"></h1>
         <p id="roomInfo"></p>
-      </section>
+
+        <hr>
+
+        <div class="player-list-header">
+            <h3>目前玩家</h3>
+            <span id="playerCount">0 人</span>
+        </div>
+
+        <div id="playerList">
+            <p>目前還沒有玩家加入。</p>
+        </div>
+
+        <p id="realtimeStatus">正在連線即時更新...</p>
+    </section>
+
     </section>
 
     <button type="button" id="logoutButton">
