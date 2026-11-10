@@ -36,7 +36,7 @@ loginForm.addEventListener('submit', async (event) => {
     console.log('User ID:', data.user.id);
     // 登入成功後，前往主持人控制台
     setTimeout(() => {
-    window.location.href = './host.html';
+        window.location.href = './host.html';
     }, 800);
 
   } catch (error) {
