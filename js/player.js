@@ -26,11 +26,44 @@ function showPlayerInfo(playerData) {
   joinedRoomName.textContent = playerData.room_name;
   joinedPlayerName.textContent = playerData.player_name;
 
-  playerStatus.textContent = '已記住這台裝置的玩家資料';
+  playerStatus.textContent = '玩家身分驗證成功！';
+}
+
+// 驗證玩家身分
+async function verifyPlayer(playerData) {
+  const { data, error } = await supabase.functions.invoke(
+    'verify-player',
+    {
+      body: {
+        room_code: playerData.room_code,
+        player_id: playerData.player_id,
+        player_token: playerData.player_token
+      }
+    }
+  );
+
+  if (error) {
+    const verifyError = new Error(
+      data?.error || error.message || '玩家身分驗證失敗'
+    );
+
+    verifyError.status = error.context?.status;
+    throw verifyError;
+  }
+
+  if (
+    !data?.success ||
+    !data?.room ||
+    !data?.player
+  ) {
+    throw new Error(data?.error || '驗證資料不完整');
+  }
+
+  return data;
 }
 
 // 初始化玩家頁面
-function initPlayerPage() {
+async function initPlayerPage() {
   const savedData = localStorage.getItem(STORAGE_KEY);
 
   if (!savedData) {
@@ -49,13 +82,58 @@ function initPlayerPage() {
       throw new Error('玩家資料不完整');
     }
 
-    // 顯示上次儲存的玩家資料
-    showPlayerInfo(playerData);
+    // 驗證期間暫時隱藏加入畫面
+    joinSection.hidden = true;
+    playerStatus.textContent = '正在確認玩家身分...';
+
+    // 向後端驗證玩家 Token
+    const result = await verifyPlayer(playerData);
+
+    // 使用後端確認過的資料更新本機紀錄
+    const verifiedData = {
+      ...playerData,
+      room_id: result.room.id,
+      room_code: result.room.room_code,
+      room_name: result.room.room_name,
+      player_id: result.player.id,
+      player_name: result.player.player_name
+    };
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(verifiedData)
+    );
+
+    // 驗證成功，恢復玩家畫面
+    showPlayerInfo(verifiedData);
+
+    console.log('玩家身分驗證成功：', {
+      room_code: result.room.room_code,
+      player_id: result.player.id,
+      player_name: result.player.player_name
+    });
 
   } catch (error) {
-    console.error('讀取玩家資料失敗：', error);
-    localStorage.removeItem(STORAGE_KEY);
-    playerStatus.textContent = '歡迎參加茶會！';
+    console.error('玩家身分驗證失敗：', error);
+
+    // Token 無效或玩家與房間不符
+    if (error.status === 401 || error.status === 403) {
+      localStorage.removeItem(STORAGE_KEY);
+
+      playerResult.hidden = true;
+      joinSection.hidden = false;
+
+      playerStatus.textContent = '玩家身分已失效，請重新加入房間。';
+      return;
+    }
+
+    // 其他錯誤可能只是網路或伺服器暫時異常
+    // 保留原本 Token，避免誤刪玩家資料
+    playerResult.hidden = true;
+    joinSection.hidden = false;
+
+    playerStatus.textContent =
+      '目前無法確認玩家身分，請重新整理頁面再試一次。';
   }
 }
 
