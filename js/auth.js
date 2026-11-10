@@ -21,30 +21,28 @@ loginForm.addEventListener('submit', async (event) => {
       password
     });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     if (!data.user) {
       throw new Error('無法取得使用者資料');
     }
 
-    message.textContent = '登入成功！';
+    message.textContent = '登入成功！正在進入控制台...';
     message.style.color = 'green';
 
     console.log('主持人登入成功');
     console.log('User ID:', data.user.id);
-    // 登入成功後，前往主持人控制台
-    setTimeout(() => {
-        window.location.href = './host.html';
-    }, 800);
+    console.log('準備跳轉 host.html');
+
+    // 直接跳轉主持人控制台
+    window.location.assign('./host.html');
 
   } catch (error) {
     console.error('登入失敗:', error.message);
+
     message.textContent = '登入失敗，請確認 Email 與密碼。';
     message.style.color = 'red';
 
-  } finally {
     loginButton.disabled = false;
     loginButton.textContent = '登入';
   }
