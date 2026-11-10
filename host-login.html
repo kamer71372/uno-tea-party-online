@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNO Tea Party - 主持人登入</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <main class="login-container">
+    <h1>🌈 UNO Tea Party</h1>
+    <h2>主持人登入</h2>
+
+    <form id="loginForm">
+      <label for="email">電子郵件</label>
+      <input
+        type="email"
+        id="email"
+        placeholder="輸入主持人 Email"
+        autocomplete="username"
+        required
+      >
+
+      <label for="password">密碼</label>
+      <input
+        type="password"
+        id="password"
+        placeholder="輸入密碼"
+        autocomplete="current-password"
+        required
+      >
+
+      <button type="submit" id="loginButton">
+        登入
+      </button>
+    </form>
+
+    <p id="message" role="status"></p>
+  </main>
+
+  <script type="module" src="./js/auth.js"></script>
+
+</body>
+</html>
