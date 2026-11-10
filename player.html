@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNO Tea Party - 加入遊戲</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <main class="login-container">
+    <h1>🌈 UNO Tea Party</h1>
+    <h2>加入遊戲</h2>
+
+    <p id="playerStatus">歡迎參加茶會！</p>
+
+    <section id="joinSection">
+      <form id="joinForm">
+
+        <label for="roomCode">六位數房間代碼</label>
+        <input
+          type="text"
+          id="roomCode"
+          placeholder="例如：391609"
+          inputmode="numeric"
+          maxlength="6"
+          pattern="[0-9]{6}"
+          required
+        >
+
+        <label for="playerName">玩家姓名</label>
+        <input
+          type="text"
+          id="playerName"
+          placeholder="輸入妳的姓名"
+          maxlength="20"
+          required
+        >
+
+        <button type="submit" id="joinButton">
+          加入房間
+        </button>
+
+      </form>
+    </section>
+
+    <section id="playerResult" hidden>
+      <h3>加入成功！🎉</h3>
+
+      <p>房間名稱：</p>
+      <strong id="joinedRoomName"></strong>
+
+      <p>玩家姓名：</p>
+      <strong id="joinedPlayerName"></strong>
+
+      <p>玩家身分已儲存在這個瀏覽器。</p>
+    </section>
+
+    <p id="message" role="status"></p>
+
+  </main>
+
+  <script type="module" src="./js/player.js"></script>
+
+</body>
+</html>
