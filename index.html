@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>UNO 彩虹心理戰 - 25題茶會抽籤系統</title>
+  
+  <!-- 
+    ========================================================================
+    Open Source Dependencies & Licenses:
+    1. Tailwind CSS (MIT License) - Hosted via jsDelivr Open-Source CDN
+    2. Google Fonts (SIL Open Font License) - Cinzel & Zen Maru Gothic
+    3. Web Audio API (W3C Standard) - Built-in Browser Audio Synthesizer
+    ========================================================================
+  -->
+  
+  <!-- Tailwind CSS Engine (MIT License) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  
+  <!-- Google Fonts (SIL Open Font License) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  
+  <style type="text/tailwindcss">
+    @theme {
+      --color-lolita-rose: #fce4ec;
+      --color-lolita-pink: #f8bbd0;
+      --color-lolita-deep: #880e4f;
+      --color-lolita-wine: #4a154b;
+      --color-lolita-gold: #d4af37;
+      --color-lolita-goldlight: #f7e7ce;
+      --color-lolita-cream: #fffdd0;
+      --color-lolita-bg: #fdfbf7;
+
+      --color-uno-red: #e63946;
+      --color-uno-yellow: #ffb703;
+      --color-uno-green: #2a9d8f;
+      --color-uno-blue: #1d3557;
+
+      --font-title: 'Cinzel', 'Zen Maru Gothic', serif;
+      --font-body: 'Zen Maru Gothic', sans-serif;
+    }
+  </style>
+
+  <style>
+    /* Custom Scrollbars & Lace Patterns */
+    body {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      background-color: #fdfbf7;
+      background-image: 
+        radial-gradient(#f8bbd0 0.75px, transparent 0.75px),
+        radial-gradient(#f8bbd0 0.75px, #fdfbf7 0.75px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* Lace Border Decorator */
+    .lace-border {
+      border: 4px double #d4af37;
+      outline: 2px solid #f8bbd0;
+      outline-offset: 4px;
+    }
+
+    /* UNO Card Oval Backdrop Styling */
+    .uno-oval {
+      background: white;
+      transform: rotate(-12deg);
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    /* Slot Machine / Card Flip Animation */
+    .card-flip-anim {
+      animation: flipCard 0.4s ease-in-out;
+    }
+
+    @keyframes flipCard {
+      0% { transform: scale(0.95) rotateY(0deg); opacity: 0.8; }
+      50% { transform: scale(1.03) rotateY(90deg); opacity: 0.5; }
+      100% { transform: scale(1) rotateY(0deg); opacity: 1; }
+    }
+
+    /* Pulsing Glow */
+    .glow-effect {
+      box-shadow: 0 0 25px rgba(212, 175, 55, 0.6);
+    }
+
+    /* Modal Backdrop Blur */
+    .backdrop-blur-custom {
+      backdrop-filter: blur(6px);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between p-3 md:p-6 overflow-x-hidden">
+
+  <!-- Top Header / Bar -->
+  <header class="w-full max-w-6xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl p-4 shadow-xl border-2 border-lolita-pink relative z-10 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-lolita-deep to-pink-500 flex items-center justify-center text-white text-2xl font-bold shadow-md">
+        🃏
+      </div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-black text-lolita-wine tracking-wide font-title">
+          UNO 彩虹心理戰
+        </h1>
+        <p class="text-xs md:text-sm text-pink-700 font-bold flex items-center gap-1">
+          <span>🎀 蘿莉塔茶會專用 25 題互動抽籤平板系統</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Mode & Deck Status -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <!-- Remaining Questions Badge -->
+      <div class="bg-lolita-rose border border-lolita-pink px-4 py-2 rounded-2xl flex items-center gap-2">
+        <span class="text-xs font-bold text-lolita-deep">題庫庫存</span>
+        <span id="deck-counter" class="text-lg font-black text-lolita-wine">25 / 25</span>
+      </div>
+
+      <!-- No Repeat Toggle -->
+      <button id="toggle-repeat-btn" onclick="toggleRepeatMode()" class="px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all flex items-center gap-1 bg-amber-50 border-amber-300 text-amber-900 shadow-sm cursor-pointer">
+        <span id="repeat-icon">🔒</span>
+        <span id="repeat-text">不重複抽題：開啟</span>
+      </button>
+
+      <!-- Player Roster Import Button -->
+      <button onclick="openModal('players-modal')" class="px-4 py-2 bg-emerald-100 hover:bg-emerald-200 border-2 border-emerald-300 rounded-2xl text-xs font-bold text-emerald-950 transition-all shadow-sm flex items-center gap-1 cursor-pointer">
+        <span>👥 玩家名單</span>
+        <span id="player-count-badge" class="bg-emerald-700 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">0</span>
+      </button>
+
+      <!-- Instant Scoreboard Button -->
+      <button onclick="openScoreboard()" class="px-4 py-2 bg-amber-200 hover:bg-amber-300 border-2 border-amber-400 rounded-2xl text-xs font-black text-amber-950 transition-all shadow-md flex items-center gap-1 glow-effect cursor-pointer">
+        🏆 戰績結算
+      </button>
+
+      <!-- Rule Modal Button -->
+      <button onclick="openModal('rules-modal')" class="px-4 py-2 bg-pink-100 hover:bg-pink-200 border-2 border-pink-300 rounded-2xl text-xs font-bold text-pink-900 transition-all shadow-sm cursor-pointer">
+        📖 玩法
+      </button>
+
+      <!-- History Modal Button -->
+      <button onclick="openModal('history-modal')" class="px-4 py-2 bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-2xl text-xs font-bold text-purple-900 transition-all shadow-sm cursor-pointer">
+        📜 歷程 (<span id="history-count">0</span>)
+      </button>
+    </div>
+  </header>
+
+  <!-- Game Stage/Phase Selector Banner -->
+  <section class="w-full max-w-6xl mx-auto mt-4">
+    <div class="bg-gradient-to-r from-lolita-wine via-purple-900 to-lolita-deep text-white p-3 md:p-4 rounded-3xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-3 border-2 border-lolita-gold">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🏆</span>
+        <div>
+          <div class="text-xs text-amber-200 font-bold">當前遊戲階段計分規則</div>
+          <div id="current-stage-title" class="text-base md:text-lg font-black text-white">
+            第一階段：默契同頻（多數決 ➔ 得 1 分）
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage Buttons -->
+      <div class="flex items-center gap-2 bg-black/30 p-1.5 rounded-2xl">
+        <button onclick="setStage(1)" id="stage-btn-1" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-lolita-gold text-slate-900 shadow-md cursor-pointer">
+          階段 1: 多數決 (1分)
+        </button>
+        <button onclick="setStage(2)" id="stage-btn-2" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-pink-100 hover:bg-white/10 cursor-pointer">
+          階段 2: 少數決 (2分)
+        </button>
+        <button onclick="setStage(3)" id="stage-btn-3" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-pink-100 hover:bg-white/10 cursor-pointer">
+          階段 3: 猜主持人 (3分)
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Question Display & Draw Engine -->
+  <main class="w-full max-w-6xl mx-auto my-4 flex-grow flex flex-col justify-center">
+    
+    <!-- Welcome Card (Shown before first draw) -->
+    <div id="welcome-card" class="bg-white/95 rounded-3xl p-8 text-center shadow-2xl border-4 border-lolita-pink lace-border my-auto">
+      <div class="w-24 h-24 mx-auto mb-4 bg-pink-100 rounded-full flex items-center justify-center text-5xl shadow-inner border-2 border-pink-300">
+        🫖
+      </div>
+      <h2 class="text-2xl md:text-3xl font-black text-lolita-wine mb-2">準備好開啟蘿莉塔彩虹心理戰了嗎？</h2>
+      <p class="text-slate-600 font-bold max-w-lg mx-auto mb-6 text-sm md:text-base">
+        請點擊下方大按鈕隨機抽出題目！全場玩家準備好手中的 <span class="text-red-600 font-black">紅</span>、<span class="text-amber-500 font-black">黃</span>、<span class="text-emerald-600 font-black">綠</span>、<span class="text-blue-600 font-black">藍</span> 4 張 UNO 牌即可開始出牌。
+      </p>
+      <button onclick="drawQuestion()" class="w-full max-w-md mx-auto py-5 px-8 bg-gradient-to-r from-pink-500 via-rose-500 to-lolita-deep text-white font-black text-2xl rounded-3xl shadow-xl hover:scale-105 active:scale-95 transition-all border-4 border-lolita-gold flex items-center justify-center gap-3 cursor-pointer">
+        <span>🎲 抽取第一題</span>
+      </button>
+    </div>
+
+    <!-- Question View (Hidden by default, shown when drawn) -->
+    <div id="question-card" class="hidden bg-white/95 rounded-3xl p-5 md:p-8 shadow-2xl border-4 border-lolita-gold relative overflow-hidden transition-all">
+      
+      <!-- Top Badges -->
+      <div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-pink-100">
+        <div class="flex items-center gap-3">
+          <span id="q-number" class="bg-lolita-wine text-lolita-gold font-black text-lg md:text-xl px-4 py-1.5 rounded-2xl shadow">
+            Q1
+          </span>
+          <span id="q-category" class="bg-pink-100 text-pink-900 border border-pink-300 font-bold text-xs md:text-sm px-3 py-1 rounded-xl">
+            [風格印象篇]
+          </span>
+        </div>
+
+        <div class="text-xs font-bold text-pink-700 bg-pink-50 px-3 py-1.5 rounded-xl border border-pink-200">
+          📍 請全場玩家亮牌
+        </div>
+      </div>
+
+      <!-- Question Title -->
+      <div class="mb-6">
+        <h2 id="q-title" class="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 leading-tight">
+          題目加載中...
+        </h2>
+      </div>
+
+      <!-- 4 UNO Options Grid (2x2 layout on tablet/desktop) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+        
+        <!-- RED OPTION -->
+        <div class="relative bg-gradient-to-br from-red-500 to-red-700 text-white rounded-3xl p-5 md:p-6 shadow-lg border-4 border-white flex items-center gap-4 group transition-transform">
+          <div class="w-14 h-14 md:w-16 md:h-16 shrink-0 uno-oval flex items-center justify-center text-red-600 font-black text-2xl md:text-3xl shadow">
+            🔴
+          </div>
+          <div class="overflow-hidden">
+            <div class="text-red-100 text-xs font-bold uppercase tracking-widest mb-1">RED 顏色卡牌</div>
+            <div id="opt-red" class="text-lg md:text-xl font-black leading-snug">
+              選項內文...
+            </div>
+          </div>
+        </div>
+
+        <!-- YELLOW OPTION -->
+        <div class="relative bg-gradient-to-br from-amber-400 to-amber-500 text-slate-900 rounded-3xl p-5 md:p-6 shadow-lg border-4 border-white flex items-center gap-4 group transition-transform">
+          <div class="w-14 h-14 md:w-16 md:h-16 shrink-0 uno-oval flex items-center justify-center text-amber-600 font-black text-2xl md:text-3xl shadow">
+            🟡
+          </div>
+          <div class="overflow-hidden">
+            <div class="text-amber-900/70 text-xs font-bold uppercase tracking-widest mb-1">YELLOW 顏色卡牌</div>
+            <div id="opt-yellow" class="text-lg md:text-xl font-black leading-snug text-slate-900">
+              選項內文...
+            </div>
+          </div>
+        </div>
+
+        <!-- GREEN OPTION -->
+        <div class="relative bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-3xl p-5 md:p-6 shadow-lg border-4 border-white flex items-center gap-4 group transition-transform">
+          <div class="w-14 h-14 md:w-16 md:h-16 shrink-0 uno-oval flex items-center justify-center text-emerald-600 font-black text-2xl md:text-3xl shadow">
+            🟢
+          </div>
+          <div class="overflow-hidden">
+            <div class="text-emerald-100 text-xs font-bold uppercase tracking-widest mb-1">GREEN 顏色卡牌</div>
+            <div id="opt-green" class="text-lg md:text-xl font-black leading-snug">
+              選項內文...
+            </div>
+          </div>
+        </div>
+
+        <!-- BLUE OPTION -->
+        <div class="relative bg-gradient-to-br from-blue-600 to-indigo-800 text-white rounded-3xl p-5 md:p-6 shadow-lg border-4 border-white flex items-center gap-4 group transition-transform">
+          <div class="w-14 h-14 md:w-16 md:h-16 shrink-0 uno-oval flex items-center justify-center text-blue-600 font-black text-2xl md:text-3xl shadow">
+            🔵
+          </div>
+          <div class="overflow-hidden">
+            <div class="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1">BLUE 顏色卡牌</div>
+            <div id="opt-blue" class="text-lg md:text-xl font-black leading-snug">
+              選項內文...
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Round Result Recorder Section -->
+      <div class="bg-amber-50/90 border-2 border-amber-300 rounded-2xl p-4 mb-6 shadow-inner">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b border-amber-200">
+          <div class="flex items-center gap-2">
+            <span class="text-base">📊</span>
+            <span class="text-xs md:text-sm font-black text-amber-950">標記本輪結果與玩家得分：</span>
+          </div>
+          <div class="text-xs text-amber-900 font-bold">
+            對應規則：<span id="rec-stage-badge" class="font-black text-lolita-wine">階段 1 (多數決)</span>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <!-- Most Chosen Color Selection (Spans 2 cols) -->
+          <div class="sm:col-span-2">
+            <div class="text-xs font-bold text-slate-700 mb-1.5">出牌最多 / 勝出顏色：</div>
+            <div class="flex items-center gap-2">
+              <button onclick="setMostChosenColor('red')" id="btn-color-red" class="flex-1 py-2 px-2 text-xs font-black rounded-xl border border-red-300 bg-white text-red-700 hover:bg-red-50 transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                🔴 紅
+              </button>
+              <button onclick="setMostChosenColor('yellow')" id="btn-color-yellow" class="flex-1 py-2 px-2 text-xs font-black rounded-xl border border-amber-300 bg-white text-amber-700 hover:bg-amber-50 transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                🟡 黃
+              </button>
+              <button onclick="setMostChosenColor('green')" id="btn-color-green" class="flex-1 py-2 px-2 text-xs font-black rounded-xl border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50 transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                🟢 綠
+              </button>
+              <button onclick="setMostChosenColor('blue')" id="btn-color-blue" class="flex-1 py-2 px-2 text-xs font-black rounded-xl border border-blue-300 bg-white text-blue-700 hover:bg-blue-50 transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                🔵 藍
+              </button>
+            </div>
+          </div>
+          
+          <!-- Wild Card Toggle in Recorder -->
+          <div class="flex flex-col justify-end">
+            <div class="text-xs font-bold text-slate-700 mb-1.5">加分卡 (Wild)：</div>
+            <button id="wild-card-btn" onclick="toggleWildCard()" class="w-full py-2 px-3 bg-slate-900 text-amber-300 border-2 border-amber-400 rounded-xl font-black text-xs shadow flex items-center justify-center gap-1 hover:bg-slate-800 transition-all cursor-pointer">
+              <span>🃏 萬用加分卡：<span id="wild-status">未開啟</span></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Player Individual Scoring Dropdown & Tags Area -->
+        <div class="pt-3 border-t border-amber-200">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2">
+            <label class="text-xs font-black text-slate-800 flex items-center gap-1">
+              <span>👑 本題得分玩家紀錄：</span>
+              <span class="text-[11px] font-normal text-amber-800">(可勾選多位玩家後一次套用)</span>
+            </label>
+
+            <button id="score-player-picker-btn" type="button" onclick="toggleScorePlayerPicker()" class="w-full sm:w-auto px-4 py-2 bg-white border-2 border-amber-400 rounded-xl font-black text-xs text-slate-800 shadow-sm hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500">
+              ☑️ 選擇得分玩家（0 位）
+            </button>
+          </div>
+
+          <!-- Multi-select checklist panel -->
+          <div id="score-player-picker" class="hidden mb-3 p-3 bg-white border-2 border-amber-300 rounded-2xl shadow-inner">
+            <div class="flex flex-col sm:flex-row gap-2 mb-3">
+              <input id="score-player-search" type="search" oninput="renderScorePlayerChecklist()" placeholder="🔎 搜尋玩家姓名..." class="flex-1 min-w-0 px-3 py-2 border border-amber-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              <button type="button" onclick="selectAllVisibleScorePlayers()" class="px-3 py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-black">全選搜尋結果</button>
+              <button type="button" onclick="clearScorePlayerSelection()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black">清空勾選</button>
+            </div>
+            <div class="flex items-center justify-between mb-2 text-xs font-bold text-slate-600">
+              <span id="score-player-selection-count">已勾選 0 位</span>
+              <span>可上下滑動選取</span>
+            </div>
+            <div id="score-player-checklist" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto p-1">
+              <span class="text-xs text-slate-400">目前尚無玩家名單。</span>
+            </div>
+            <div class="flex flex-col sm:flex-row justify-end gap-2 mt-3 pt-3 border-t border-amber-100">
+              <button type="button" onclick="toggleScorePlayerPicker()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">取消</button>
+              <button type="button" onclick="applyScorePlayerSelection()" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black shadow">✓ 套用得分玩家</button>
+            </div>
+          </div>
+
+          <!-- Active Scored Player Tags -->
+          <div id="scored-player-tags" class="flex flex-wrap gap-2 min-h-[36px] bg-white/70 p-2 rounded-xl border border-amber-200 items-center">
+            <span class="text-xs text-slate-400 font-bold italic">尚無選取得分玩家，請點選「選擇得分玩家」。</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Bar (Big Draw Button for Tablet) -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+        
+        <button onclick="openModal('select-modal')" class="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 border-2 border-slate-300 rounded-2xl text-slate-700 font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
+          <span>📋 手動全題庫挑選</span>
+        </button>
+
+        <button onclick="drawQuestion()" class="w-full sm:w-1/2 py-4 px-8 bg-gradient-to-r from-pink-500 via-rose-500 to-lolita-deep text-white font-black text-xl md:text-2xl rounded-2xl shadow-xl hover:scale-102 active:scale-98 transition-all border-2 border-lolita-gold flex items-center justify-center gap-3 glow-effect cursor-pointer">
+          <span class="text-2xl">🎲</span>
+          <span>抽取下一題</span>
+        </button>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation / Quick Actions Footer -->
+  <footer class="w-full max-w-6xl mx-auto bg-white/80 backdrop-blur-md rounded-2xl p-3 shadow-md border border-pink-200 flex flex-wrap items-center justify-between text-xs font-bold text-slate-600 gap-2">
+    <div class="flex items-center gap-3">
+      <span>茶會座談無壓力遊玩</span>
+      <span>•</span>
+      <span>全場共 25 題庫</span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button onclick="openModal('custom-modal')" class="hover:text-lolita-wine transition-colors px-2 py-1 bg-pink-50 rounded-lg border border-pink-200 cursor-pointer">
+        ➕ 自訂新增題目
+      </button>
+      <button onclick="confirmReset()" class="hover:text-red-700 transition-colors px-2 py-1 bg-red-50 text-red-600 rounded-lg border border-red-200 cursor-pointer">
+        🔄 重置題庫與歷程
+      </button>
+    </div>
+  </footer>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 0. PLAYER ROSTER & IMPORT MODAL -->
+  <div id="players-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-custom flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col p-6 shadow-2xl border-4 border-emerald-400 relative">
+      <button onclick="closeModal('players-modal')" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-xl font-bold hover:bg-slate-200 cursor-pointer">✕</button>
+      
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">👥</span>
+        <h2 class="text-xl font-black text-emerald-950">玩家名單整筆匯入與管理</h2>
+      </div>
+      <p class="text-xs text-slate-500 mb-4 font-bold">可在下方文字框中貼上整筆玩家姓名（每行一個名字，或用逗號/空白分隔），即可一次完成匯入。</p>
+
+      <div class="space-y-4 overflow-y-auto pr-1">
+        <div>
+          <label class="block text-xs font-black text-slate-700 mb-1">整筆貼上匯入區：</label>
+          <textarea id="import-names-text" rows="5" placeholder="例如：
+小美
+Alice
+阿花
+小玲
+(可直接複製 Excel 或 LINE 文字整筆貼上)" class="w-full p-3 border-2 border-emerald-200 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-emerald-400 focus:outline-none"></textarea>
+          <button onclick="importPlayersFromText()" class="mt-2 w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-xl shadow transition-all flex items-center justify-center gap-1 cursor-pointer">
+            📥 確定整筆匯入名單
+          </button>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-black text-slate-700">目前名單庫 (<span id="roster-count">0</span> 人)：</span>
+            <button onclick="clearAllPlayers()" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">清空所有玩家</button>
+          </div>
+          <div id="roster-tags-container" class="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-200 min-h-[60px] max-h-40 overflow-y-auto">
+            <span class="text-xs text-slate-400">目前尚無玩家名單，請於上方匯入。</span>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="closeModal('players-modal')" class="mt-4 py-3 bg-slate-800 text-white font-bold rounded-2xl cursor-pointer">
+        關閉
+      </button>
+    </div>
+  </div>
+
+  <!-- 0.5 INSTANT LEADERBOARD / SCOREBOARD MODAL -->
+  <div id="scoreboard-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-custom flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col p-6 shadow-2xl border-4 border-amber-400 relative">
+      <button onclick="closeModal('scoreboard-modal')" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-xl font-bold hover:bg-slate-200 cursor-pointer">✕</button>
+      
+      <div class="flex items-center justify-between mb-4 pb-2 border-b">
+        <div class="flex items-center gap-2">
+          <span class="text-3xl">🏆</span>
+          <div>
+            <h2 class="text-2xl font-black text-amber-950">隨時戰績總結算</h2>
+            <p class="text-xs text-amber-700 font-bold">依當前已標記之得份紀錄即時統計排行榜</p>
+          </div>
+        </div>
+        <button onclick="renderLeaderboard()" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-black border border-amber-300 cursor-pointer">
+          🔄 重新計算
+        </button>
+      </div>
+
+      <!-- Leaderboard List -->
+      <div id="leaderboard-list" class="flex-grow overflow-y-auto space-y-2 pr-1">
+        <!-- Dynamic Ranks -->
+      </div>
+
+      <button onclick="closeModal('scoreboard-modal')" class="mt-4 py-3 bg-slate-900 text-white font-black rounded-2xl shadow cursor-pointer">
+        關閉排行榜
+      </button>
+    </div>
+  </div>
+
+  <!-- 1. RULES & SCORING MODAL -->
+  <div id="rules-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-custom flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl border-4 border-lolita-gold relative">
+      <button onclick="closeModal('rules-modal')" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-xl font-bold hover:bg-slate-200 cursor-pointer">✕</button>
+      
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-black text-lolita-wine mb-1">🃏 《UNO 彩虹心理戰》遊戲規則指南</h2>
+        <p class="text-xs text-pink-700 font-bold">全場不需移動、免抽牌免洗牌，用 4 張 UNO 牌進行心理博弈！</p>
+      </div>
+
+      <div class="space-y-4 text-sm text-slate-700 leading-relaxed">
+        <div class="bg-pink-50 p-4 rounded-2xl border border-pink-200">
+          <h3 class="font-black text-pink-900 mb-1">🎮 每一輪簡單四步驟：</h3>
+          <ol class="list-decimal list-inside space-y-1 font-medium">
+            <li><strong>主持人出題</strong>：公布當前題目與 🔴紅 🟡黃 🟢綠 🔵藍 4個選項。</li>
+            <li><strong>秘密蓋牌</strong>：玩家選出 1 張顏色牌，蓋在桌上或緊握胸前。</li>
+            <li><strong>同時亮牌</strong>：主持人喊「3、2、1，亮牌！」，所有人舉起牌。</li>
+            <li><strong>結算得分</strong>：根據當前階段規則結算，獲得籌碼或自己記分。</li>
+          </ol>
+        </div>
+
+        <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 space-y-2">
+          <h3 class="font-black text-amber-900">🏆 三階段計分規則：</h3>
+          <p><strong>第一階段（默契多數決）</strong>：選擇最多人選擇的顏色者，各得 <strong>1分</strong>。</p>
+          <p><strong>第二階段（心機少數決）</strong>：選擇最少人選擇（至少1人）的顏色者，各得 <strong>2分</strong>。</p>
+          <p><strong>第三階段（猜主持人）</strong>：主持人先蓋牌選擇，猜中主持人顏色者，各得 <strong>3分</strong>。</p>
+        </div>
+
+        <div class="bg-purple-50 p-4 rounded-2xl border border-purple-200">
+          <h3 class="font-black text-purple-900 mb-1">🌟 黑色【Wild 萬用牌】加分規則：</h3>
+          <p class="text-xs font-bold text-purple-800">每人全場限用 1 次！亮牌時一手拿顏色牌、一手舉起 Wild 牌。若該輪順利得分，分數直接<strong>翻倍</strong>！</p>
+        </div>
+      </div>
+
+      <button onclick="closeModal('rules-modal')" class="w-full mt-6 py-3 bg-lolita-wine text-white font-bold rounded-2xl shadow cursor-pointer">
+        我知道了，開始遊戲！
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. HISTORY MODAL -->
+  <div id="history-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-custom flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col p-6 shadow-2xl border-4 border-purple-300 relative">
+      <button onclick="closeModal('history-modal')" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-xl font-bold hover:bg-slate-200 cursor-pointer">✕</button>
+      
+      <h2 class="text-xl font-black text-purple-900 mb-4 pb-2 border-b">📜 已抽取題目歷程</h2>
+      
+      <div id="history-list" class="flex-grow overflow-y-auto space-y-3 pr-2">
+        <!-- Dynamic History Items -->
+        <p class="text-center text-slate-400 py-8">目前尚未抽取任何題目。</p>
+      </div>
+
+      <button onclick="closeModal('history-modal')" class="mt-4 py-3 bg-slate-800 text-white font-bold rounded-2xl cursor-pointer">
+        關閉
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. MANUAL SELECT MODAL -->
+  <div id="select-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-custom flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[85vh] flex flex-col p-6 shadow-2xl border-4 border-lolita-gold relative">
+      <button onclick="closeModal('select-modal')" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-xl font-bold hover:bg-slate-200 cursor-pointer">✕</button>
+      
+      <h2 class="text-xl font-black text-slate-800 mb-1">📋 25 題庫總覽與手動挑選</h2>
+      <p class="text-xs text-slate-500 mb-4">點擊任何題目可直接載入畫面（標記為「已抽」者代表先前已抽過）</p>
+      
+      <div id="select-grid" class="flex-grow overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 pr-2">
+        <!-- Dynamic Grid Items -->
+      </div>
+
+      <button onclick="closeModal('select-modal')" class="mt-4 py-3 bg-slate-800 text-white font-bold rounded-2xl cursor-pointer">
+        關閉
+      </button>
+    </div>
+  </div>
+
+  <!-- 4. ADD CUSTOM QUESTION MODAL -->
+  <div id="custom-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-custom flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border-4 border-pink-300 relative">
+      <button onclick="closeModal('custom-modal')" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-xl font-bold hover:bg-slate-200 cursor-pointer">✕</button>
+      
+      <h2 class="text-xl font-black text-lolita-wine mb-4">➕ 現場新增自訂題目</h2>
+      
+      <form onsubmit="saveCustomQuestion(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">題目分類 (如: 現場加碼)</label>
+          <input type="text" id="c-category" required value="現場加碼" class="w-full px-3 py-2 border rounded-xl font-bold text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">題目內容</label>
+          <input type="text" id="c-title" required placeholder="請輸入題目問題..." class="w-full px-3 py-2 border rounded-xl font-bold text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-red-600 mb-1">🔴 紅色選項</label>
+            <input type="text" id="c-red" required placeholder="選項 1" class="w-full px-3 py-1.5 border border-red-300 rounded-xl text-xs font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-amber-600 mb-1">🟡 黃色選項</label>
+            <input type="text" id="c-yellow" required placeholder="選項 2" class="w-full px-3 py-1.5 border border-amber-300 rounded-xl text-xs font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-emerald-600 mb-1">🟢 綠色選項</label>
+            <input type="text" id="c-green" required placeholder="選項 3" class="w-full px-3 py-1.5 border border-emerald-300 rounded-xl text-xs font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-blue-600 mb-1">🔵 藍色選項</label>
+            <input type="text" id="c-blue" required placeholder="選項 4" class="w-full px-3 py-1.5 border border-blue-300 rounded-xl text-xs font-bold">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full mt-4 py-3 bg-gradient-to-r from-pink-500 to-lolita-deep text-white font-bold rounded-2xl shadow cursor-pointer">
+          儲存並加入題庫
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. RESET CONFIRMATION MODAL -->
+  <div id="reset-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-custom flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-4 border-red-300 text-center relative">
+      <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
+        ⚠️
+      </div>
+      <h3 class="text-xl font-black text-slate-800 mb-2">確定要重置嗎？</h3>
+      <p class="text-xs text-slate-600 mb-6 font-bold leading-relaxed">
+        重置後將清空所有已抽取的歷史紀錄，並將所有題目回復為「未抽取」狀態。
+      </p>
+      <div class="flex items-center gap-3">
+        <button onclick="closeModal('reset-modal')" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-all cursor-pointer">
+          取消
+        </button>
+        <button onclick="executeReset()" class="w-1/2 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition-all shadow cursor-pointer">
+          確定重置
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Message -->
+  <div id="toast-msg" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white font-bold text-sm px-6 py-3 rounded-full shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300 z-50 border border-amber-400">
+    通知訊息
+  </div>
+
+  <!-- Sound FX Generator via Standard W3C Web Audio API (Open Source Native Browser Standard) -->
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'draw') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } else if (type === 'reveal') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      }
+    }
+  </script>
+
+  <!-- Game Logic JavaScript (Pure Vanilla JS) -->
+  <script>
+    // Initial 25 Questions Database
+    const defaultQuestions = [
+      { id: 1, category: "風格印象", title: "說到甜系蘿莉塔（Sweet Lolita），會想到什麼搭配色系？", red: "粉紅配白", yellow: "粉藍配白", green: "黃色系", blue: "黑配粉" },
+      { id: 2, category: "風格印象", title: "說到古典系蘿莉塔（Classic Lolita），會想到什麼搭配色系？", red: "生成色", yellow: "生成配藍", green: "生成配紅", blue: "棕色系" },
+      { id: 3, category: "風格印象", title: "說到哥德系蘿莉塔（Gothic Lolita），會想到什麼搭配色系？", red: "黑白", yellow: "黑紅", green: "黑紫", blue: "黑綠" },
+      { id: 4, category: "風格印象", title: "如果要嘗試一次全新風格，你最想挑戰哪一種？", red: "華麗和風 (Wa-Loli)", yellow: "極致甜美 (Sweet)", green: "優雅古典 (Classic)", blue: "帥氣龐克哥德 (Punk/Gothic)" },
+      { id: 5, category: "配件偏好", title: "下列頭飾你最喜歡哪一種？", red: "BNT（Bonnet 包頭帽）", yellow: "髮帶 / 頭巾", green: "KC（髮箍）", blue: "蝴蝶結髮夾" },
+      { id: 6, category: "買衣心法", title: "入手一件新小裙子時，最看重哪一個關鍵細節？", red: "柄圖印花", yellow: "版型剪裁與修飾度", green: "蕾絲與面料質感", blue: "百搭度與配件相容性" },
+      { id: 7, category: "鞋款搭配", title: "穿小裙子出門，腳上最常搭配哪種鞋款？", red: "經典雙扣帶圓頭茶會鞋", yellow: "高底木屐或和風鞋", green: "復古皮靴或馬汀靴", blue: "厚底瑪莉珍鞋 / 地雷系厚底" },
+      { id: 8, category: "服飾細節", title: "一件裙裙最吸引你的「隱藏細節」是什麼？", red: "緻密精緻的蕾絲與刺繡", yellow: "珍珠或復古金屬扣", green: "壓褶與多層次蛋糕裙擺", blue: "可拆式領結/袖子等多穿法設計" },
+      { id: 9, category: "穿搭習慣", title: "出門穿搭時，你習慣讓裙撐達到什麼程度的澎度？", red: "日常微微自然澎度", yellow: "優雅正統 A 字線條", green: "暴力超大圓形紙杯蛋糕澎撐", blue: "完全不穿撐，享受垂墜感" },
+      { id: 10, category: "日常選擇", title: "今天是難得的假日剛好想出門走走，你會穿哪件裙裙？", red: "上次穿過一次還沒洗的", yellow: "新買的還沒穿出門的", green: "看天氣決定", blue: "看朋友穿什麼隨機應變" },
+      { id: 11, category: "出遊行程", title: "放假有空我就想穿小裙子出門去……", red: "剪瀏海、做臉保養", yellow: "吃下午茶、跑咖拍美照", green: "當個聽團仔衝現場", blue: "跑酒吧喝一杯放鬆" },
+      { id: 12, category: "出門準備", title: "精心打扮出門前，你通常需要花多少時間準備？", red: "30 分鐘內迅速完裝", yellow: "1 小時剛剛好", green: "2 小時精雕細琢", blue: "2.5 小時以上 (含挑選配件與妝髮)" },
+      { id: 13, category: "突發狀況", title: "穿小裙子精心打扮出門，最怕遇到什麼突發狀況？", red: "突然下暴雨，水花濺到裙擺", yellow: "裙撐太大擠不進座位或車門", green: "路人一直盯著看甚至偷拍照", blue: "吃喝東西時醬汁滴到胸前" },
+      { id: 14, category: "應變處理", title: "如果出門前 10 分鐘突然下大雨，你會？", red: "果斷取消改留在家", yellow: "換成普通便服出門", green: "撐大傘加全面防護照樣衝", blue: "臨時換成不怕髒的深色短裙" },
+      { id: 15, category: "社交回應", title: "被路人突如其來問「你們這是在 Cosplay 嗎？」，你通常會？", red: "溫柔耐心地解釋洋服文化差異", yellow: "微笑點頭，不作過多解釋", green: "簡短回答「不是」並火速離開", blue: "展現氣場反問「你覺得呢？」" },
+      { id: 16, category: "收納困擾", title: "在家收納衣物時，最讓你頭痛的問題是什麼？", red: "衣櫃爆滿，長裙掛不下", yellow: "各式裙撐與防塵袋太佔空間", green: "鞋盒堆成山沒地方放", blue: "髮飾、胸針與小配件永遠找不到" },
+      { id: 17, category: "飲品偏好", title: "在聚會或茶會上，你最想點哪一種飲料來喝？", red: "儀式感滿滿的熱英式風味紅茶", yellow: "現刷濃郁的日式抹茶", green: "視覺感拉滿的果茶 / 氣泡飲", blue: "來一杯清涼放鬆的精釀啤酒或調酒" },
+      { id: 18, category: "手搖偏好", title: "去手搖飲料店買飲料時，你最常點哪種甜度冰量？", red: "無糖去冰 / 無糖微冰", yellow: "微糖微冰 (一分糖/三分糖)", green: "半糖或少冰", blue: "全糖正常冰 (台南甜果斷喝爆)" },
+      { id: 19, category: "美饌早餐", title: "悠閒的早晨，最想用哪款蛋料理/早午餐開啟一天？", red: "古早味傳統粉漿蛋餅", yellow: "班尼迪克蛋西式早午餐", green: "日式精緻玉子燒 / 煎蛋飯糰", blue: "一杯熱黑咖啡配簡單水煮蛋" },
+      { id: 20, category: "宵夜美食", title: "晚上聚會或遊玩結束後，最想吃哪種宵夜？", red: "香氣四溢的鹹酥雞與炸物", yellow: "精緻甜點或塔類蛋糕", green: "熱騰騰的煲仔飯或熱湯", blue: "精釀啤酒配下酒小菜" },
+      { id: 21, category: "茶會體驗", title: "參加聚會或茶會時，你內心最期待的是什麼？", red: "穿新衣服拍照放閃", yellow: "跟老朋友聊天更新近況", green: "品嚐精緻好看又好吃的茶點", blue: "交流與欣賞大家的收藏配件" },
+      { id: 22, category: "攝影取景", title: "拍照打卡時，你最偏好哪種取景風格？", red: "專攻精緻顏值與妝髮特寫", yellow: "必須拍到完整頭尾大全身 Outfit", green: "側拍自然互動流露的氛圍感", blue: "背景建築與造景為主的全身景" },
+      { id: 23, category: "夢幻場景", title: "理想中的夢幻拍照背景地點是？", red: "歐式城堡、莊園或復古老宅", yellow: "日式神社、老街與古民家", green: "森林秘境與自然山海大景", blue: "氣氛濃郁的復古酒吧或展演空間" },
+      { id: 24, category: "休閒紓壓", title: "結束一整週忙碌工作後，最療癒的紓壓方式是？", red: "在家窩著追劇睡到自然醒", yellow: "靜心刷茶或泡一壺好茶沉澱", green: "出門散步拍美照吸新鮮空氣", blue: "約朋友去酒吧或餐廳小酌放鬆" },
+      { id: 25, category: "旅遊規劃", title: "如果規劃一次小旅行，你最喜歡哪種行程規劃？", red: "老宅咖啡館巡禮與文青走讀", yellow: "自然風景拍照與夜空星雲攝影", green: "隱藏版美食與酒吧特色探索", blue: "入住頂級飯店純放空享受設施" }
+    ];
+
+    // State Variables
+    let questions = [];
+    let drawnIds = [];
+    let historyRecords = {}; 
+    let players = []; 
+    let currentQuestion = null;
+    let noRepeatMode = true;
+    let currentStage = 1;
+    let wildCardActive = false;
+    // Temporary checklist selection; only saved after pressing Apply.
+    let scorePlayerSelection = new Set();
+
+    // Load State from LocalStorage
+    function initData() {
+      const savedQ = localStorage.getItem('uno_tea_questions');
+      if (savedQ) {
+        questions = JSON.parse(savedQ);
+      } else {
+        questions = [...defaultQuestions];
+      }
+
+      const savedDrawn = localStorage.getItem('uno_tea_drawn');
+      if (savedDrawn) {
+        drawnIds = JSON.parse(savedDrawn);
+      }
+
+      const savedRecords = localStorage.getItem('uno_tea_records');
+      if (savedRecords) {
+        historyRecords = JSON.parse(savedRecords);
+      }
+
+      const savedPlayers = localStorage.getItem('uno_tea_players');
+      if (savedPlayers) {
+        players = JSON.parse(savedPlayers);
+      }
+
+      updateCounters();
+      renderHistory();
+      renderSelectGrid();
+      renderPlayerRosterUI();
+      updatePlayerDropdowns();
+    }
+
+    // Save State
+    function saveData() {
+      localStorage.setItem('uno_tea_questions', JSON.stringify(questions));
+      localStorage.setItem('uno_tea_drawn', JSON.stringify(drawnIds));
+      localStorage.setItem('uno_tea_records', JSON.stringify(historyRecords));
+      localStorage.setItem('uno_tea_players', JSON.stringify(players));
+      updateCounters();
+      renderHistory();
+      renderSelectGrid();
+      renderPlayerRosterUI();
+      updatePlayerDropdowns();
+    }
+
+    // Player Roster Management Logic
+    function importPlayersFromText() {
+      const rawText = document.getElementById('import-names-text').value;
+      if (!rawText || !rawText.trim()) {
+        showToast('請先貼上玩家姓名文字');
+        return;
+      }
+
+      const parsedNames = rawText
+        .split(/[\n,，;\s]+/)
+        .map(n => n.trim())
+        .filter(n => n.length > 0);
+
+      if (parsedNames.length === 0) {
+        showToast('無法辨別任何有效名字');
+        return;
+      }
+
+      const uniqueNames = Array.from(new Set([...players, ...parsedNames]));
+      players = uniqueNames;
+      saveData();
+
+      document.getElementById('import-names-text').value = '';
+      showToast(`成功匯入！目前共 ${players.length} 位玩家`);
+    }
+
+    function removePlayer(name) {
+      players = players.filter(p => p !== name);
+      Object.keys(historyRecords).forEach(qId => {
+        if (historyRecords[qId].scoringPlayers) {
+          historyRecords[qId].scoringPlayers = historyRecords[qId].scoringPlayers.filter(p => p !== name);
+        }
+      });
+      saveData();
+      if (currentQuestion) updateRecorderUI();
+      showToast(`已移除玩家：${name}`);
+    }
+
+    function clearAllPlayers() {
+      if (players.length === 0) return;
+      players = [];
+      saveData();
+      if (currentQuestion) updateRecorderUI();
+      showToast('已清空所有玩家名單');
+    }
+
+    function renderPlayerRosterUI() {
+      const countBadge = document.getElementById('player-count-badge');
+      const rosterCount = document.getElementById('roster-count');
+      const container = document.getElementById('roster-tags-container');
+
+      if (countBadge) countBadge.innerText = players.length;
+      if (rosterCount) rosterCount.innerText = players.length;
+
+      if (!container) return;
+
+      if (players.length === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400">目前尚無玩家名單，請於上方匯入。</span>`;
+        return;
+      }
+
+      let html = '';
+      players.forEach(p => {
+        html += `
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-emerald-300 text-emerald-950 font-bold text-xs rounded-xl shadow-sm">
+            <span>${p}</span>
+            <button onclick="removePlayer('${p}')" class="text-red-500 hover:text-red-700 text-sm font-bold cursor-pointer">✕</button>
+          </span>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function updatePlayerDropdowns() {
+      updateScorePickerButton();
+      const panel = document.getElementById('score-player-picker');
+      if (panel && !panel.classList.contains('hidden')) renderScorePlayerChecklist();
+    }
+
+    function updateScorePickerButton() {
+      const btn = document.getElementById('score-player-picker-btn');
+      if (!btn) return;
+      const qId = currentQuestion ? currentQuestion.id : null;
+      const scored = qId && historyRecords[qId] ? (historyRecords[qId].scoringPlayers || []) : [];
+      btn.innerText = `☑️ 選擇得分玩家（${scored.length} 位）`;
+    }
+
+    function toggleScorePlayerPicker() {
+      if (!currentQuestion) {
+        showToast('請先抽取或選擇一題，再記錄得分玩家');
+        return;
+      }
+      const panel = document.getElementById('score-player-picker');
+      if (!panel) return;
+
+      if (panel.classList.contains('hidden')) {
+        const qId = currentQuestion.id;
+        const scored = historyRecords[qId] ? (historyRecords[qId].scoringPlayers || []) : [];
+        scorePlayerSelection = new Set(scored);
+        document.getElementById('score-player-search').value = '';
+        panel.classList.remove('hidden');
+        renderScorePlayerChecklist();
+      } else {
+        panel.classList.add('hidden');
+      }
+    }
+
+    function escapeScorePlayerHtml(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    function getVisibleScorePlayerIndexes() {
+      const searchInput = document.getElementById('score-player-search');
+      const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+      return players.map((name, index) => ({ name, index }))
+        .filter(item => item.name.toLowerCase().includes(keyword));
+    }
+
+    function renderScorePlayerChecklist() {
+      const container = document.getElementById('score-player-checklist');
+      if (!container) return;
+
+      if (players.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-400">目前尚無玩家名單，請先匯入玩家。</span>';
+        updateScorePlayerSelectionCount();
+        return;
+      }
+
+      const visiblePlayers = getVisibleScorePlayerIndexes();
+      if (visiblePlayers.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-400">找不到符合搜尋條件的玩家。</span>';
+        updateScorePlayerSelectionCount();
+        return;
+      }
+
+      container.innerHTML = visiblePlayers.map(item => `
+        <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-100 bg-amber-50/60 hover:bg-amber-100 cursor-pointer text-sm font-bold text-slate-800">
+          <input type="checkbox" class="score-player-checkbox w-4 h-4 accent-amber-500" data-player-index="${item.index}" ${scorePlayerSelection.has(item.name) ? 'checked' : ''} onchange="setScorePlayerChecked(${item.index}, this.checked)">
+          <span class="break-all">${escapeScorePlayerHtml(item.name)}</span>
+        </label>
+      `).join('');
+      updateScorePlayerSelectionCount();
+    }
+
+    function setScorePlayerChecked(playerIndex, checked) {
+      const name = players[playerIndex];
+      if (typeof name === 'undefined') return;
+      if (checked) scorePlayerSelection.add(name);
+      else scorePlayerSelection.delete(name);
+      updateScorePlayerSelectionCount();
+    }
+
+    function updateScorePlayerSelectionCount() {
+      const countEl = document.getElementById('score-player-selection-count');
+      if (countEl) countEl.innerText = `已勾選 ${scorePlayerSelection.size} 位`;
+    }
+
+    function selectAllVisibleScorePlayers() {
+      getVisibleScorePlayerIndexes().forEach(item => scorePlayerSelection.add(item.name));
+      renderScorePlayerChecklist();
+    }
+
+    function clearScorePlayerSelection() {
+      scorePlayerSelection.clear();
+      renderScorePlayerChecklist();
+    }
+
+    function applyScorePlayerSelection() {
+      if (!currentQuestion) return;
+      const qId = currentQuestion.id;
+      if (!historyRecords[qId]) {
+        historyRecords[qId] = { stage: currentStage, mostChosen: null, wildUsed: wildCardActive, scoringPlayers: [] };
+      }
+
+      // Keep the order from the imported roster and ignore players removed from the roster.
+      historyRecords[qId].scoringPlayers = players.filter(name => scorePlayerSelection.has(name));
+      saveData();
+      updateRecorderUI();
+      document.getElementById('score-player-picker').classList.add('hidden');
+      showToast(`已套用 ${historyRecords[qId].scoringPlayers.length} 位得分玩家`);
+    }
+
+    function removeScorePlayer(name) {
+      if (!currentQuestion) return;
+      const qId = currentQuestion.id;
+      if (historyRecords[qId] && historyRecords[qId].scoringPlayers) {
+        historyRecords[qId].scoringPlayers = historyRecords[qId].scoringPlayers.filter(p => p !== name);
+        saveData();
+        updateRecorderUI();
+        showToast(`已移除得分玩家：${name}`);
+      }
+    }
+
+    function openScoreboard() {
+      renderLeaderboard();
+      openModal('scoreboard-modal');
+    }
+
+    function renderLeaderboard() {
+      const container = document.getElementById('leaderboard-list');
+      if (!container) return;
+
+      if (players.length === 0) {
+        container.innerHTML = `<p class="text-center text-slate-400 py-8">尚無玩家名單，請先點選「👥 玩家名單」匯入玩家名稱。</p>`;
+        return;
+      }
+
+      const playerScores = {};
+      const playerDetails = {};
+      players.forEach(p => {
+        playerScores[p] = 0;
+        playerDetails[p] = { wins: 0, wildWins: 0 };
+      });
+
+      Object.keys(historyRecords).forEach(qId => {
+        const rec = historyRecords[qId];
+        if (rec && rec.scoringPlayers && rec.scoringPlayers.length > 0) {
+          const stagePoints = { 1: 1, 2: 2, 3: 3 };
+          const basePoint = stagePoints[rec.stage] || 1;
+          const multiplier = rec.wildUsed ? 2 : 1;
+          const finalPoint = basePoint * multiplier;
+
+          rec.scoringPlayers.forEach(p => {
+            if (playerScores[p] !== undefined) {
+              playerScores[p] += finalPoint;
+              playerDetails[p].wins += 1;
+              if (rec.wildUsed) playerDetails[p].wildWins += 1;
+            }
+          });
+        }
+      });
+
+      const sortedPlayers = [...players].sort((a, b) => playerScores[b] - playerScores[a]);
+
+      let html = '';
+      sortedPlayers.forEach((p, idx) => {
+        const score = playerScores[p];
+        const details = playerDetails[p];
+        let rankBadge = `<span class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-black text-sm flex items-center justify-center">${idx + 1}</span>`;
+
+        if (idx === 0) rankBadge = `<span class="w-8 h-8 rounded-full bg-amber-400 text-slate-900 font-black text-base flex items-center justify-center shadow">🥇</span>`;
+        if (idx === 1) rankBadge = `<span class="w-8 h-8 rounded-full bg-slate-300 text-slate-900 font-black text-base flex items-center justify-center shadow">🥈</span>`;
+        if (idx === 2) rankBadge = `<span class="w-8 h-8 rounded-full bg-amber-700 text-white font-black text-base flex items-center justify-center shadow">🥉</span>`;
+
+        html += `
+          <div class="flex items-center justify-between p-3.5 bg-white border-2 ${idx === 0 ? 'border-amber-400 bg-amber-50/50 shadow-md' : 'border-slate-100'} rounded-2xl">
+            <div class="flex items-center gap-3">
+              ${rankBadge}
+              <div>
+                <div class="font-black text-base text-slate-800">${p}</div>
+                <div class="text-xs text-slate-500 font-bold">答對得分次數：${details.wins} 次 ${details.wildWins > 0 ? `(含 ${details.wildWins} 次 Wild 翻倍)` : ''}</div>
+              </div>
+            </div>
+
+            <div class="text-right">
+              <span class="text-2xl font-black text-lolita-wine">${score}</span>
+              <span class="text-xs font-bold text-slate-500"> 分</span>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function toggleRepeatMode() {
+      noRepeatMode = !noRepeatMode;
+      const btnText = document.getElementById('repeat-text');
+      const btnIcon = document.getElementById('repeat-icon');
+      const btn = document.getElementById('toggle-repeat-btn');
+
+      if (noRepeatMode) {
+        btnText.innerText = '不重複抽題：開啟';
+        btnIcon.innerText = '🔒';
+        btn.className = 'px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all flex items-center gap-1 bg-amber-50 border-amber-300 text-amber-900 shadow-sm cursor-pointer';
+        showToast('已開啟「不重複抽題」模式');
+      } else {
+        btnText.innerText = '不重複抽題：關閉 (自由抽)';
+        btnIcon.innerText = '🔓';
+        btn.className = 'px-4 py-2 rounded-2xl text-xs font-bold border-2 transition-all flex items-center gap-1 bg-slate-100 border-slate-300 text-slate-700 shadow-sm cursor-pointer';
+        showToast('已關閉不重複模式，可重複抽題');
+      }
+    }
+
+    function updateCounters() {
+      const remaining = noRepeatMode ? questions.length - drawnIds.length : questions.length;
+      document.getElementById('deck-counter').innerText = `${remaining} / ${questions.length}`;
+      document.getElementById('history-count').innerText = drawnIds.length;
+    }
+
+    function setStage(stageNum) {
+      currentStage = stageNum;
+      const titleEl = document.getElementById('current-stage-title');
+      
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`stage-btn-${i}`);
+        if (i === stageNum) {
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-lolita-gold text-slate-900 shadow-md cursor-pointer';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-pink-100 hover:bg-white/10 cursor-pointer';
+        }
+      }
+
+      if (stageNum === 1) {
+        titleEl.innerText = '第一階段：默契同頻（多數決 ➔ 得 1 分）';
+      } else if (stageNum === 2) {
+        titleEl.innerText = '第二階段：心機大逃殺（少數決 ➔ 得 2 分）';
+      } else {
+        titleEl.innerText = '第三階段：主持人讀心術（猜主持人顏色 ➔ 得 3 分）';
+      }
+
+      if (currentQuestion) {
+        const qId = currentQuestion.id;
+        if (!historyRecords[qId]) {
+          historyRecords[qId] = { stage: currentStage, mostChosen: null, wildUsed: wildCardActive, scoringPlayers: [] };
+        } else {
+          historyRecords[qId].stage = currentStage;
+        }
+        saveData();
+        updateRecorderUI();
+      }
+
+      showToast(`已切換至第 ${stageNum} 階段計分規則`);
+    }
+
+    function setMostChosenColor(color) {
+      if (!currentQuestion) return;
+      const qId = currentQuestion.id;
+
+      if (!historyRecords[qId]) {
+        historyRecords[qId] = { stage: currentStage, mostChosen: color, wildUsed: wildCardActive, scoringPlayers: [] };
+      } else {
+        if (historyRecords[qId].mostChosen === color) {
+          historyRecords[qId].mostChosen = null;
+        } else {
+          historyRecords[qId].mostChosen = color;
+        }
+        historyRecords[qId].stage = currentStage;
+        historyRecords[qId].wildUsed = wildCardActive;
+      }
+
+      saveData();
+      updateRecorderUI();
+      playSound('draw');
+
+      const colorNames = { red: '🔴 紅色', yellow: '🟡 黃色', green: '🟢 綠色', blue: '🔵 藍色' };
+      const currentChosen = historyRecords[qId].mostChosen;
+      showToast(currentChosen ? `已記錄本輪勝出/最多人選擇：${colorNames[color]}` : '已取消顏色標記');
+    }
+
+    function toggleWildCard() {
+      wildCardActive = !wildCardActive;
+
+      if (currentQuestion) {
+        const qId = currentQuestion.id;
+        if (!historyRecords[qId]) {
+          historyRecords[qId] = { stage: currentStage, mostChosen: null, wildUsed: wildCardActive, scoringPlayers: [] };
+        } else {
+          historyRecords[qId].wildUsed = wildCardActive;
+        }
+        saveData();
+      }
+
+      updateRecorderUI();
+
+      if (wildCardActive) {
+        playSound('draw');
+        showToast('本輪啟用黑色 Wild 萬用牌，勝者得分翻倍！');
+      } else {
+        showToast('已關閉本輪 Wild 萬用牌');
+      }
+    }
+
+    function updateRecorderUI() {
+      if (!currentQuestion) return;
+      const qId = currentQuestion.id;
+      const rec = historyRecords[qId] || { stage: currentStage, mostChosen: null, wildUsed: wildCardActive, scoringPlayers: [] };
+
+      const wildBtn = document.getElementById('wild-card-btn');
+      const wildStatus = document.getElementById('wild-status');
+      if (wildCardActive) {
+        wildStatus.innerText = '🔥 啟用中 (翻倍!)';
+        wildBtn.className = 'w-full py-2 px-3 bg-amber-400 text-slate-900 border-2 border-amber-300 rounded-xl font-black text-xs shadow flex items-center justify-center gap-1 glow-effect cursor-pointer';
+      } else {
+        wildStatus.innerText = '未開啟';
+        wildBtn.className = 'w-full py-2 px-3 bg-slate-900 text-amber-300 border-2 border-amber-400 rounded-xl font-black text-xs shadow flex items-center justify-center gap-1 hover:bg-slate-800 transition-all cursor-pointer';
+      }
+
+      const colorStyles = {
+        red: { active: 'bg-red-600 text-white ring-2 ring-red-400 shadow-md font-black', inactive: 'bg-white text-red-700 border-red-300 hover:bg-red-50' },
+        yellow: { active: 'bg-amber-400 text-slate-900 ring-2 ring-amber-300 shadow-md font-black', inactive: 'bg-white text-amber-700 border-amber-300 hover:bg-amber-50' },
+        green: { active: 'bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-md font-black', inactive: 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50' },
+        blue: { active: 'bg-blue-600 text-white ring-2 ring-blue-400 shadow-md font-black', inactive: 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50' }
+      };
+
+      ['red', 'yellow', 'green', 'blue'].forEach(c => {
+        const btn = document.getElementById(`btn-color-${c}`);
+        if (btn) {
+          if (rec.mostChosen === c) {
+            btn.className = `flex-1 py-2 px-2 text-xs font-black rounded-xl border transition-all flex items-center justify-center gap-1 cursor-pointer ${colorStyles[c].active}`;
+          } else {
+            btn.className = `flex-1 py-2 px-2 text-xs font-black rounded-xl border transition-all flex items-center justify-center gap-1 cursor-pointer ${colorStyles[c].inactive}`;
+          }
+        }
+      });
+
+      const stageNames = { 1: '階段 1 (多數決)', 2: '階段 2 (少數決)', 3: '階段 3 (猜主持人)' };
+      document.getElementById('rec-stage-badge').innerText = stageNames[rec.stage || currentStage] || '階段 1';
+
+      const tagsContainer = document.getElementById('scored-player-tags');
+      const scoredList = rec.scoringPlayers || [];
+
+      if (scoredList.length === 0) {
+        tagsContainer.innerHTML = `<span class="text-xs text-slate-400 font-bold italic">尚無選取得分玩家，請點選「選擇得分玩家」。</span>`;
+      } else {
+        let tagsHtml = '';
+        scoredList.forEach(name => {
+          tagsHtml += `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-400 text-amber-950 font-black text-xs rounded-xl shadow-sm">
+              <span>👤 ${name}</span>
+              <button onclick="removeScorePlayer('${name}')" class="text-red-500 hover:text-red-700 text-sm font-bold cursor-pointer">✕</button>
+            </span>
+          `;
+        });
+        tagsContainer.innerHTML = tagsHtml;
+      }
+      updateScorePickerButton();
+    }
+
+    function drawQuestion() {
+      let pool = questions;
+
+      if (noRepeatMode) {
+        pool = questions.filter(q => !drawnIds.includes(q.id));
+      }
+
+      if (pool.length === 0) {
+        showToast('所有題目已抽取完畢！請按 reset 重置題庫');
+        return;
+      }
+
+      playSound('draw');
+
+      document.getElementById('welcome-card').classList.add('hidden');
+      const qCard = document.getElementById('question-card');
+      qCard.classList.remove('hidden');
+
+      qCard.classList.add('card-flip-anim');
+      setTimeout(() => qCard.classList.remove('card-flip-anim'), 400);
+
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      const selected = pool[randomIndex];
+      
+      displayQuestion(selected);
+
+      if (!drawnIds.includes(selected.id)) {
+        drawnIds.push(selected.id);
+        saveData();
+      }
+
+      setTimeout(() => playSound('reveal'), 150);
+    }
+
+    function loadSpecificQuestion(id) {
+      const selected = questions.find(q => q.id === id);
+      if (!selected) return;
+
+      document.getElementById('welcome-card').classList.add('hidden');
+      document.getElementById('question-card').classList.remove('hidden');
+      
+      displayQuestion(selected);
+
+      if (!drawnIds.includes(selected.id)) {
+        drawnIds.push(selected.id);
+        saveData();
+      }
+
+      closeModal('select-modal');
+      playSound('reveal');
+    }
+
+    function displayQuestion(q) {
+      const scorePicker = document.getElementById('score-player-picker');
+      if (scorePicker) scorePicker.classList.add('hidden');
+      currentQuestion = q;
+      document.getElementById('q-number').innerText = `Q${q.id}`;
+      document.getElementById('q-category').innerText = `[${q.category}]`;
+      document.getElementById('q-title').innerText = q.title;
+
+      document.getElementById('opt-red').innerText = q.red;
+      document.getElementById('opt-yellow').innerText = q.yellow;
+      document.getElementById('opt-green').innerText = q.green;
+      document.getElementById('opt-blue').innerText = q.blue;
+
+      if (!historyRecords[q.id]) {
+        historyRecords[q.id] = { stage: currentStage, mostChosen: null, wildUsed: false, scoringPlayers: [] };
+      }
+      wildCardActive = historyRecords[q.id].wildUsed || false;
+      
+      updateRecorderUI();
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('history-list');
+      if (drawnIds.length === 0) {
+        container.innerHTML = `<p class="text-center text-slate-400 py-8">目前尚未抽取任何題目。</p>`;
+        return;
+      }
+
+      const stageLabels = { 1: '階段 1 多數決', 2: '階段 2 少數決', 3: '階段 3 猜主持人' };
+      const colorMap = {
+        red: { label: '🔴 紅色', bg: 'bg-red-100 text-red-900 border-red-300' },
+        yellow: { label: '🟡 黃色', bg: 'bg-amber-100 text-amber-950 border-amber-300' },
+        green: { label: '🟢 綠色', bg: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+        blue: { label: '🔵 藍色', bg: 'bg-blue-100 text-blue-900 border-blue-300' }
+      };
+
+      let html = '';
+      [...drawnIds].reverse().forEach((id) => {
+        const q = questions.find(item => item.id === id);
+        if (q) {
+          const rec = historyRecords[q.id] || { stage: 1, mostChosen: null, wildUsed: false, scoringPlayers: [] };
+          const colorInfo = rec.mostChosen ? colorMap[rec.mostChosen] : { label: '⚪ 未標記顏色', bg: 'bg-slate-100 text-slate-500 border-slate-200' };
+          const optionText = rec.mostChosen ? q[rec.mostChosen] : '';
+          const scoredList = rec.scoringPlayers || [];
+
+          html += `
+            <div class="bg-white p-4 rounded-2xl border-2 border-pink-200 shadow-sm transition-all hover:border-pink-300">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-pink-100">
+                <div class="flex items-center gap-2">
+                  <span class="font-black text-white bg-lolita-wine px-2.5 py-0.5 rounded-lg text-xs">Q${q.id}</span>
+                  <span class="font-bold text-pink-900 text-xs">[${q.category}]</span>
+                  <span class="text-xs bg-purple-100 text-purple-900 px-2 py-0.5 rounded-md font-bold">${stageLabels[rec.stage] || '階段 1'}</span>
+                </div>
+                
+                <div class="flex items-center gap-1.5">
+                  ${rec.wildUsed ? '<span class="text-xs font-black bg-amber-300 text-amber-950 border border-amber-400 px-2 py-0.5 rounded-md shadow-sm">🃏 加分卡生效 (翻倍)</span>' : '<span class="text-xs font-bold text-slate-400">無使用加分卡</span>'}
+                </div>
+              </div>
+
+              <div class="font-black text-slate-800 text-base mb-2 leading-snug">${q.title}</div>
+
+              <!-- Color & Scored Players Summary -->
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-bold text-slate-600">本輪最多選擇：</span>
+                  <span class="text-xs font-black px-2.5 py-0.5 rounded-lg border ${colorInfo.bg}">
+                    ${colorInfo.label} ${optionText ? `：${optionText}` : ''}
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-200/60">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-xs font-bold text-slate-600">👑 本題得分玩家 (${scoredList.length}人)：</span>
+                    ${scoredList.length > 0 
+                      ? scoredList.map(name => `<span class="text-xs font-black bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded-md">👤 ${name}</span>`).join('') 
+                      : '<span class="text-xs text-slate-400">尚未記錄得分玩家</span>'}
+                  </div>
+
+                  <button onclick="loadSpecificQuestion(${q.id}); closeModal('history-modal');" class="text-xs font-bold text-lolita-wine hover:underline flex items-center gap-0.5 ml-auto cursor-pointer">
+                    前往此題標記 ➔
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      });
+      container.innerHTML = html;
+    }
+
+    function renderSelectGrid() {
+      const container = document.getElementById('select-grid');
+      let html = '';
+
+      questions.forEach(q => {
+        const isDrawn = drawnIds.includes(q.id);
+        const rec = historyRecords[q.id];
+        const hasColor = rec && rec.mostChosen;
+
+        html += `
+          <div onclick="loadSpecificQuestion(${q.id})" class="p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${isDrawn ? 'bg-slate-50 border-slate-300' : 'bg-white border-pink-200 hover:border-lolita-gold shadow-sm'}">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-black px-2 py-0.5 rounded-md ${isDrawn ? 'bg-slate-300 text-slate-700' : 'bg-pink-100 text-pink-900'}">
+                Q${q.id} [${q.category}]
+              </span>
+              ${isDrawn ? `<span class="text-xs font-bold ${hasColor ? 'text-amber-700' : 'text-slate-500'}">✓ 已抽 ${hasColor ? ' (已記錄)' : ''}</span>` : '<span class="text-xs font-bold text-emerald-600">可抽</span>'}
+            </div>
+            <div class="font-bold text-sm text-slate-800 line-clamp-2">${q.title}</div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function saveCustomQuestion(e) {
+      e.preventDefault();
+      const category = document.getElementById('c-category').value.trim();
+      const title = document.getElementById('c-title').value.trim();
+      const red = document.getElementById('c-red').value.trim();
+      const yellow = document.getElementById('c-yellow').value.trim();
+      const green = document.getElementById('c-green').value.trim();
+      const blue = document.getElementById('c-blue').value.trim();
+
+      const newId = questions.length + 1;
+      const newQ = { id: newId, category, title, red, yellow, green, blue };
+
+      questions.push(newQ);
+      saveData();
+      closeModal('custom-modal');
+      showToast(`新增成功！已加入為 Q${newId}`);
+      loadSpecificQuestion(newId);
+
+      document.getElementById('c-title').value = '';
+      document.getElementById('c-red').value = '';
+      document.getElementById('c-yellow').value = '';
+      document.getElementById('c-green').value = '';
+      document.getElementById('c-blue').value = '';
+    }
+
+    function confirmReset() {
+      openModal('reset-modal');
+    }
+
+    function executeReset() {
+      drawnIds = [];
+      historyRecords = {};
+      questions = [...defaultQuestions];
+      saveData();
+      closeModal('reset-modal');
+      showToast('已完成重置！所有歷史紀錄與勝出標記已歸零');
+      document.getElementById('welcome-card').classList.remove('hidden');
+      document.getElementById('question-card').classList.add('hidden');
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-msg');
+      toast.innerText = msg;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 2500);
+    }
+
+    window.onload = function() {
+      initData();
+    };
+  </script>
+  <script type="module" src="./js/connection-test.js"></script>
+</body>
+</html>
