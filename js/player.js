@@ -14,6 +14,7 @@ const playerStatus = document.getElementById('playerStatus');
 const joinedRoomName = document.getElementById('joinedRoomName');
 const joinedPlayerName = document.getElementById('joinedPlayerName');
 const message = document.getElementById('message');
+const logoutPlayerButton = document.getElementById('logoutPlayerButton');
 
 // 玩家資料儲存名稱
 const STORAGE_KEY = 'unoTeaPartyPlayer';
@@ -226,8 +227,41 @@ async function joinRoom(event) {
   }
 }
 
+// 玩家登出
+function logoutPlayer() {
+  const confirmed = confirm(
+    '確定要登出目前的玩家身分嗎？\n登出後需要重新加入房間。'
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  // 清除本機玩家資料，不刪除資料庫紀錄
+  localStorage.removeItem(STORAGE_KEY);
+
+  // 恢復加入房間畫面
+  playerResult.hidden = true;
+  joinSection.hidden = false;
+
+  // 清除原本的玩家資訊
+  joinedRoomName.textContent = '';
+  joinedPlayerName.textContent = '';
+
+  // 更新提示
+  playerStatus.textContent = '已登出玩家身分，歡迎重新加入！';
+  message.textContent = '';
+
+  // 清空輸入欄位
+  roomCodeInput.value = '';
+  playerNameInput.value = '';
+
+  console.log('玩家已登出');
+}
+
 // 綁定事件
 joinForm.addEventListener('submit', joinRoom);
+logoutPlayerButton.addEventListener('click', logoutPlayer);
 
 // 啟動頁面
 initPlayerPage();
