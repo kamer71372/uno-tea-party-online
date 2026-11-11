@@ -15,8 +15,27 @@ const playerCount = document.getElementById('playerCount');
 const realtimeStatus = document.getElementById('realtimeStatus');
 const logoutButton = document.getElementById('logoutButton');
 
+// 房間管理元素
+const roomLockStatus = document.getElementById('roomLockStatus');
+const lockRoomButton = document.getElementById('lockRoomButton');
+const unlockRoomButton = document.getElementById('unlockRoomButton');
+const roomManagementMessage = document.getElementById('roomManagementMessage');
+
 let currentRoom = null;
 let playerChannel = null;
+
+// 更新房間鎖定畫面
+function renderRoomLockStatus(isLocked) {
+  if (isLocked) {
+    roomLockStatus.textContent = '🔒 房間已鎖定，禁止新玩家加入';
+    lockRoomButton.hidden = true;
+    unlockRoomButton.hidden = false;
+  } else {
+    roomLockStatus.textContent = '🟢 房間開放加入中';
+    lockRoomButton.hidden = false;
+    unlockRoomButton.hidden = true;
+  }
+}
 
 // 顯示玩家名單
 function renderPlayers(players) {
@@ -68,7 +87,6 @@ async function loadPlayers(roomId) {
 
 // 啟動即時玩家監聽
 async function startPlayerRealtime(roomId) {
-  // 避免重複建立監聽
   if (playerChannel) {
     await supabase.removeChannel(playerChannel);
     playerChannel = null;
@@ -88,8 +106,6 @@ async function startPlayerRealtime(roomId) {
       },
       async (payload) => {
         console.log('新玩家加入：', payload.new);
-
-        // 重新讀取完整名單
         await loadPlayers(roomId);
       }
     )
@@ -108,7 +124,6 @@ async function startPlayerRealtime(roomId) {
       }
     });
 
-  // 載入目前已經加入的玩家
   await loadPlayers(roomId);
 }
 
@@ -120,7 +135,89 @@ async function showRoom(room) {
   roomInfo.textContent = `房間名稱：${room.room_name}`;
   roomResult.hidden = false;
 
+  // 顯示目前房間鎖定狀態
+  renderRoomLockStatus(Boolean(room.is_locked));
+
+  roomManagementMessage.textContent = '';
+
   await startPlayerRealtime(room.id);
+}
+
+// 鎖定或解鎖房間
+async function updateRoomLock(isLocked) {
+  if (!currentRoom) {
+    roomManagementMessage.textContent = '目前沒有可管理的房間。';
+    return;
+  }
+
+  lockRoomButton.disabled = true;
+  unlockRoomButton.disabled = true;
+
+  roomManagementMessage.textContent =
+    isLocked ? '正在鎖定房間...' : '正在解鎖房間...';
+
+  try {
+    // 取得主持人登入資訊
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
+
+    if (sessionError) throw sessionError;
+
+    const session = sessionData.session;
+
+    if (!session) {
+      throw new Error('登入已失效，請重新登入。');
+    }
+
+    // 呼叫 lock-room Edge Function
+    const { data, error } = await supabase.functions.invoke(
+      'lock-room',
+      {
+        body: {
+          room_id: currentRoom.id,
+          is_locked: isLocked
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      }
+    );
+
+    if (error) {
+      console.error('房間管理錯誤：', error);
+      throw new Error(
+        data?.error || error.message || '更新房間狀態失敗'
+      );
+    }
+
+    if (!data?.success || !data?.room) {
+      throw new Error(data?.error || '伺服器回傳資料不完整');
+    }
+
+    // 更新目前房間資料
+    currentRoom = {
+      ...currentRoom,
+      ...data.room
+    };
+
+    // 更新畫面
+    renderRoomLockStatus(data.room.is_locked);
+
+    roomManagementMessage.textContent = data.message;
+    roomManagementMessage.style.color = 'green';
+
+    console.log('房間狀態更新成功：', data.room);
+
+  } catch (error) {
+    console.error('更新房間狀態失敗：', error);
+
+    roomManagementMessage.textContent = error.message;
+    roomManagementMessage.style.color = 'red';
+
+  } finally {
+    lockRoomButton.disabled = false;
+    unlockRoomButton.disabled = false;
+  }
 }
 
 // 初始化主持人控制台
@@ -141,7 +238,7 @@ async function initHostPage() {
     // 找出這位主持人最近建立的房間
     const { data: rooms, error: roomError } = await supabase
       .from('game_rooms')
-      .select('id, room_code, room_name, status, created_at')
+      .select('id, room_code, room_name, status, is_locked, created_at')
       .eq('host_user_id', data.session.user.id)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -253,6 +350,12 @@ async function logout() {
 
 // 綁定按鈕
 createRoomButton.addEventListener('click', createRoom);
+lockRoomButton.addEventListener('click', () => {
+  updateRoomLock(true);
+});
+unlockRoomButton.addEventListener('click', () => {
+  updateRoomLock(false);
+});
 logoutButton.addEventListener('click', logout);
 
 // 監聽登出狀態

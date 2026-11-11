@@ -33,8 +33,7 @@
 
       <p id="message" role="status"></p>
 
-
-    <section id="roomResult" hidden>
+      <section id="roomResult" hidden>
         <h3>房間建立成功！🎉</h3>
 
         <p>房間代碼：</p>
@@ -43,18 +42,41 @@
 
         <hr>
 
+        <!-- 房間管理 -->
+        <section id="roomManagement">
+          <h3>房間管理</h3>
+
+          <p id="roomLockStatus">目前房間開放加入</p>
+
+          <button type="button" id="lockRoomButton">
+            鎖定房間
+          </button>
+
+          <button
+            type="button"
+            id="unlockRoomButton"
+            hidden
+          >
+            解鎖房間
+          </button>
+
+          <p id="roomManagementMessage" role="status"></p>
+        </section>
+
+        <hr>
+
+        <!-- 玩家名單 -->
         <div class="player-list-header">
-            <h3>目前玩家</h3>
-            <span id="playerCount">0 人</span>
+          <h3>目前玩家</h3>
+          <span id="playerCount">0 人</span>
         </div>
 
         <div id="playerList">
-            <p>目前還沒有玩家加入。</p>
+          <p>目前還沒有玩家加入。</p>
         </div>
 
         <p id="realtimeStatus">正在連線即時更新...</p>
-    </section>
-
+      </section>
     </section>
 
     <button type="button" id="logoutButton">
