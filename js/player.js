@@ -174,10 +174,24 @@ async function joinRoom(event) {
     );
 
     if (error) {
-      console.error('加入房間錯誤：', error);
-      throw new Error(
-        data?.error || error.message || '加入房間失敗'
-      );
+    console.error('加入房間錯誤：', error);
+
+    let errorMessage = data?.error;
+
+    // 嘗試讀取 Edge Function 回傳的中文錯誤訊息
+    if (!errorMessage && error.context) {
+        try {
+        const errorResponse = error.context.clone();
+        const errorData = await errorResponse.json();
+        errorMessage = errorData.error;
+        } catch (parseError) {
+        console.error('讀取錯誤訊息失敗：', parseError);
+        }
+    }
+
+    throw new Error(
+        errorMessage || '加入房間失敗，請稍後再試。'
+    );
     }
 
     if (
