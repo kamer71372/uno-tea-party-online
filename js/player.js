@@ -19,7 +19,7 @@ const logoutPlayerButton = document.getElementById('logoutPlayerButton');
 // 玩家資料儲存名稱
 const STORAGE_KEY = 'unoTeaPartyPlayer';
 
-// 顯示玩家加入成功畫面
+// 顯示玩家資訊
 function showPlayerInfo(playerData) {
   joinSection.hidden = true;
   playerResult.hidden = false;
@@ -28,6 +28,30 @@ function showPlayerInfo(playerData) {
   joinedPlayerName.textContent = playerData.player_name;
 
   playerStatus.textContent = '玩家身分驗證成功！';
+}
+
+// 從 Edge Function 錯誤回應讀取訊息
+async function getFunctionErrorMessage(error, fallbackMessage) {
+  // 優先使用已經取得的錯誤資料
+  if (error.context) {
+    try {
+      const response = error.context.clone();
+
+      const errorData = await response.json();
+
+      if (errorData?.error) {
+        return errorData.error;
+      }
+
+      if (errorData?.message) {
+        return errorData.message;
+      }
+    } catch (parseError) {
+      console.error('讀取伺服器錯誤訊息失敗：', parseError);
+    }
+  }
+
+  return fallbackMessage;
 }
 
 // 驗證玩家身分
@@ -44,11 +68,14 @@ async function verifyPlayer(playerData) {
   );
 
   if (error) {
-    const verifyError = new Error(
-      data?.error || error.message || '玩家身分驗證失敗'
+    const errorMessage = await getFunctionErrorMessage(
+      error,
+      '玩家身分驗證失敗，請稍後再試。'
     );
 
+    const verifyError = new Error(errorMessage);
     verifyError.status = error.context?.status;
+
     throw verifyError;
   }
 
@@ -124,7 +151,9 @@ async function initPlayerPage() {
       playerResult.hidden = true;
       joinSection.hidden = false;
 
-      playerStatus.textContent = '玩家身分已失效，請重新加入房間。';
+      playerStatus.textContent =
+        '玩家身分已失效，請重新加入房間。';
+
       return;
     }
 
@@ -173,25 +202,16 @@ async function joinRoom(event) {
       }
     );
 
+    // 處理後端錯誤
     if (error) {
-    console.error('加入房間錯誤：', error);
+      console.error('加入房間錯誤：', error);
 
-    let errorMessage = data?.error;
+      const errorMessage = await getFunctionErrorMessage(
+        error,
+        '加入房間失敗，請稍後再試。'
+      );
 
-    // 嘗試讀取 Edge Function 回傳的中文錯誤訊息
-    if (!errorMessage && error.context) {
-        try {
-        const errorResponse = error.context.clone();
-        const errorData = await errorResponse.json();
-        errorMessage = errorData.error;
-        } catch (parseError) {
-        console.error('讀取錯誤訊息失敗：', parseError);
-        }
-    }
-
-    throw new Error(
-        errorMessage || '加入房間失敗，請稍後再試。'
-    );
+      throw new Error(errorMessage);
     }
 
     if (
@@ -232,6 +252,7 @@ async function joinRoom(event) {
 
   } catch (error) {
     console.error('加入房間失敗：', error);
+
     message.textContent = error.message;
     message.style.color = 'red';
 
@@ -263,7 +284,9 @@ function logoutPlayer() {
   joinedPlayerName.textContent = '';
 
   // 更新提示
-  playerStatus.textContent = '已登出玩家身分，歡迎重新加入！';
+  playerStatus.textContent =
+    '已登出玩家身分，歡迎重新加入！';
+
   message.textContent = '';
 
   // 清空輸入欄位
